@@ -6,8 +6,6 @@ class User(BaseModel):
     first_name: str
     last_name: str
     sex: str
-    birtday: datetime.date
-    username: str
-    password: str
+    birthday: str
 
     

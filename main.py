@@ -1,7 +1,7 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from models.user import User
-from database.auth import login, signup
-from database.user import get_user_info
+from database.auth import login, check_if_username_exists, create_credentials
+from database.user import get_user_info, create_user
 from database.medication import get_user_medication
 
 from pydantic import BaseModel
@@ -14,7 +14,7 @@ class SignupRequest(BaseModel):
     first_name: str
     last_name: str
     sex: str
-    birtday: str
+    birthday: str
     username: str
     password: str
  
@@ -25,14 +25,12 @@ async def api_home():
 
 @app.post("/auth/login")
 async def api_login(data: LoginRequest):
-    print(data.username)
-    print(data.password)
-    isSuccess = login(data.username, data.password)
+    response = login(data.username, data.password)
 
-    if isSuccess:
-        return {"message": "successfully logged in", "sessionToken" : "testToken", "userId": "TESTID1234"}
+    if response[0] == "success":
+        return {"message": "successfully logged in", "sessionToken" : "testToken", "userId": response[1]}
     else:
-        return {"message": "login unsuccessful"}
+        raise HTTPException(status_code=400, detail=response[1]) 
 
 @app.get("/auth/validate-session-token")
 async def api_validate_session_token(session_token: str):
@@ -40,20 +38,36 @@ async def api_validate_session_token(session_token: str):
 
 @app.post("/auth/signup")
 async def api_signup(user: SignupRequest):
-    isSuccess = signup(user)
-    if isSuccess:
+
+    response = check_if_username_exists(user.username)
+    if(response[0] == "success"):
+        raise HTTPException(status_code=400, detail="username already exists") 
+    
+    response = create_user(user.first_name, user.last_name, user.sex, user.birthday)
+    if(response[0] == "error"):
+        raise HTTPException(status_code=response[2], detail=response[1] + " while creating user") 
+
+    user_id = response[1]
+    
+    response = create_credentials(user_id, user.username, user.password)
+    if(response[0] == "error"):
+        raise HTTPException(status_code=response[2], detail=response[1] + " while creating credentials") 
+
+    if response[0] == "success":
         return {"message": "successfully signed up"}
     else:
-        return {"message": "signup unsuccessful"}
+        raise HTTPException(status_code=response[2], detail=response[1])
+
 
 @app.get("/user/get-info/{user_id}")
 async def api_get_user_info(user_id: str):
-    user = get_user_info(user_id)
+    response = get_user_info(user_id)
 
-    if user is None:
-        return {"message": "user not found"}
+    if response[0] == "success":
+        return {"message": "user foind", "user": response[1]} 
     else:
-        return {"message": "user foind", "user": user} 
+        raise HTTPException(status_code=response[2], detail=response[1]) 
+
 
 @app.get("/user/medication/get-medication/{user_id}")
 async def api_get_user_medication(user_id: str):
