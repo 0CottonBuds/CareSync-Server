@@ -1,4 +1,5 @@
 from fastapi import HTTPException
+import traceback
 
 class Result:
     SUCCESS = 1
