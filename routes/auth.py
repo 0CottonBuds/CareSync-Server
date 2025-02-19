@@ -3,8 +3,8 @@ from pydantic import BaseModel
 
 from helpers.error import handle_error, Result
 from database.user import UserDatabase 
-from database.credentials import login, check_if_username_exists
-from database.session_token import create_session_token, validate_session_token
+from database.credentials import CredentialsDatabase
+from database.session_token import SessionTokenDatabase
 
 
 class LoginRequest(BaseModel):
@@ -27,11 +27,11 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
 
 @router.post("/login")
 async def login_user(login_request: LoginRequest):
-    response = login(login_request.username, login_request.password)
+    response = CredentialsDatabase.login(login_request.username, login_request.password)
     handle_error(response)
     user_id = response[1]
 
-    response2 = create_session_token(user_id) 
+    response2 = SessionTokenDatabase.create_session_token(user_id) 
     handle_error(response2)
     token = response2[1]
 
@@ -39,7 +39,7 @@ async def login_user(login_request: LoginRequest):
 
 @router.post("/signup")
 async def signup_user(user: SignupRequest):
-    response = check_if_username_exists(user.username)
+    response = CredentialsDatabase.check_if_username_exists(user.username)
     handle_error(response)
     if(response[0] & Result.FOUND):
         raise HTTPException(status_code=400, detail="Username already exists") 
@@ -51,14 +51,14 @@ async def signup_user(user: SignupRequest):
 
 @router.get("/username-exist")
 async def does_username_exist(username: str):
-    response = check_if_username_exists(username)
+    response = CredentialsDatabase.check_if_username_exists(username)
     handle_error(response)
     if(response[0] & Result.SUCCESS):
         raise HTTPException(status_code=400, detail="Username already exists") 
  
 @router.post("/validate-session-token")
 async def api_validate_session_token(validation_request: TokenValidationRequest):
-    response = validate_session_token(validation_request.token, validation_request.user_id) 
+    response = SessionTokenDatabase.validate_session_token(validation_request.token, validation_request.user_id) 
     handle_error(response)
 
     return {"message": "Session token is valid", "isValid": True}
