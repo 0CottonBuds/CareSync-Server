@@ -1,5 +1,5 @@
 from models.medication import Medication
-from database.generate_id import generate_unique_id
+from database.generate import generate_unique_id
 import sqlite3
 import traceback
 from env import DB_PATH

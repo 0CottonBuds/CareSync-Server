@@ -2,8 +2,9 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from helpers.error import handle_error, Result
-from database.credentials import login, check_if_username_exists 
 from database.user import UserDatabase 
+from database.credentials import login, check_if_username_exists
+from database.session_token import create_session_token, validate_session_token
 
 
 class LoginRequest(BaseModel):
@@ -18,14 +19,23 @@ class SignupRequest(BaseModel):
     username: str
     password: str
 
+class TokenValidationRequest(BaseModel):
+    token: str
+    user_id: str
+
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
 @router.post("/login")
-async def login_user(data: LoginRequest):
-    response = login(data.username, data.password)
+async def login_user(login_request: LoginRequest):
+    response = login(login_request.username, login_request.password)
     handle_error(response)
+    user_id = response[1]
 
-    return {"message": "successfully logged in", "sessionToken" : "testToken", "userId": response[1]}
+    response2 = create_session_token(user_id) 
+    handle_error(response2)
+    token = response2[1]
+
+    return {"message": "successfully logged in", "sessionToken" : token, "userId": user_id}
 
 @router.post("/signup")
 async def signup_user(user: SignupRequest):
@@ -46,8 +56,11 @@ async def does_username_exist(username: str):
     if(response[0] & Result.SUCCESS):
         raise HTTPException(status_code=400, detail="Username already exists") 
  
-@router.get("/validate-session-token")
-async def validate_session_token(session_token: str):
-    return {"message": "not yet implemented", "isValid": session_token == "testToken"}
+@router.post("/validate-session-token")
+async def api_validate_session_token(validation_request: TokenValidationRequest):
+    response = validate_session_token(validation_request.token, validation_request.user_id) 
+    handle_error(response)
+
+    return {"message": "Session token is valid", "isValid": True}
 
 

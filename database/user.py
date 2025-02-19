@@ -3,7 +3,7 @@ import sqlite3
 from env import DB_PATH
 from helpers.error import Result
 from models.user import User
-from database.generate_id import generate_unique_id
+from database.generate import generate_unique_id
 
 class UserDatabase:
 

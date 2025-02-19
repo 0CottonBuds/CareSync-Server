@@ -1,8 +1,12 @@
-from models.user import User
-from env import DB_PATH
 import sqlite3
+import traceback
 
+from datetime import datetime
+
+from env import DB_PATH
 from helpers.error import Result
+from models.user import User
+from database.generate import generate_session_token
 
 
 def login(username: str, password: str):
@@ -34,4 +38,3 @@ def check_if_username_exists(username: str):
         return [Result.NOT_FOUND, "username not found", 404]
 
     return [Result.FOUND, "username found"]
-
