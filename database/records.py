@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta, date
 from pydantic import BaseModel
 from typing import Optional
 import traceback
@@ -85,6 +86,16 @@ class MedicationRecordDatabase:
             print(traceback.format_exc())
             return [Result.INTERNAL_ERROR, f"internal server error {e}", 400]
 
+class BloodPreassureRecord(BaseModel):
+    record_id: Optional[str] = None
+    user_id: Optional[str] = None
+    systol: str
+    diastol: str
+    date: str
+    time: str
+    attachmends: Optional[list[bytes]] = None
+
+
 class BloodPreassureRecordDatabase:
     @staticmethod 
     def add_record(user_id: str, systol: str, diastol, images: list, date, time):
@@ -105,6 +116,109 @@ class BloodPreassureRecordDatabase:
             conn.close()
 
             return [Result.SUCCESS, record_id]
+
+        except sqlite3.Error as e:
+            conn.close()
+            print(traceback.format_exc())
+            return [Result.INTERNAL_ERROR, f"Error when interacting with databse: {e}", 400]
+
+        except Exception as e:
+            conn.close()
+            print(traceback.format_exc())
+            return [Result.INTERNAL_ERROR, f"internal server error {e}", 400]
+    
+    @staticmethod
+    def get_records_for_week(user_id: str, end_date_str: str):
+        '''returns 7 dates starting from date param'''
+
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        try:
+            start_date = datetime.strptime(end_date_str, "%Y-%m-%d") - timedelta(days=6)
+            start_date_str = start_date.strftime("%Y-%m-%d")
+
+            cursor.execute("SELECT record_id, systol, diastol, date, time  FROM blood_preassure_records WHERE user_id = ? AND date BETWEEN ? AND ? ORDER BY date ASC", (user_id ,start_date_str, end_date_str))
+            raw_records = cursor.fetchall()
+
+            blood_pressure_record : list[BloodPreassureRecord] = []
+            for raw_record in raw_records:
+                curr_record_id = raw_record[0]
+                curr_systol = raw_record[1]
+                curr_diastol = raw_record[2]
+                curr_date = raw_record[3]
+                curr_time = raw_record[4]
+
+                curr_blood_pressure_Record = BloodPreassureRecord(record_id=curr_record_id, systol=curr_systol, diastol=curr_diastol, date=curr_date, time=curr_time)
+
+                blood_pressure_record.append(curr_blood_pressure_Record)
+
+
+            blood_pressure_record : list[BloodPreassureRecord] = sorted(blood_pressure_record, key=lambda record: record.date)
+
+            blood_preassure_record_with_date : dict[list[BloodPreassureRecord]] = {}
+
+            end_date = datetime.strptime(end_date_str, "%Y-%m-%d")
+            curr_date = start_date
+            while not curr_date >= end_date:
+                curr_date_str = curr_date.strftime("%Y-%m-%d")
+
+                curr_date_records = [record for record in blood_pressure_record if record.date == curr_date_str]
+
+                blood_preassure_record_with_date.update({curr_date_str: curr_date_records})
+
+                curr_date = curr_date + timedelta(days=1)
+
+
+            return [Result.SUCCESS, blood_preassure_record_with_date]
+
+        except sqlite3.Error as e:
+            conn.close()
+            print(traceback.format_exc())
+            return [Result.INTERNAL_ERROR, f"Error when interacting with databse: {e}", 400]
+
+        except Exception as e:
+            conn.close()
+            print(traceback.format_exc())
+            return [Result.INTERNAL_ERROR, f"internal server error {e}", 400]
+    
+    def get_records_for_month(user_id: str, year: str, month:str):
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute("SELECT record_id, systol, diastol , date, time FROM blood_preassure_records WHERE user_id = ? AND date LIKE ?", (user_id, f"{year}-{month}%"))
+            raw_records = cursor.fetchall()
+
+            blood_pressure_record : list[BloodPreassureRecord] = []
+            for raw_record in raw_records:
+                curr_record_id = raw_record[0]
+                curr_systol = raw_record[1]
+                curr_diastol = raw_record[2]
+                curr_date = raw_record[3]
+                curr_time = raw_record[4]
+
+                curr_blood_pressure_Record = BloodPreassureRecord(record_id=curr_record_id, systol=curr_systol, diastol=curr_diastol, date=curr_date, time=curr_time)
+
+                blood_pressure_record.append(curr_blood_pressure_Record)
+
+
+            blood_pressure_record : list[BloodPreassureRecord] = sorted(blood_pressure_record, key=lambda record: record.date)
+
+            blood_preassure_record_with_date : dict[list[BloodPreassureRecord]] = {}
+
+            curr_date = date(int(year), int(month), 1)
+            while curr_date.month == int(month):
+                curr_date_str = curr_date.strftime("%Y-%m-%d")
+
+                curr_date_records = [record for record in blood_pressure_record if record.date == curr_date_str]
+
+                blood_preassure_record_with_date.update({curr_date_str: curr_date_records})
+
+                curr_date = curr_date + timedelta(days=1)
+
+
+            return [Result.SUCCESS, blood_preassure_record_with_date]
+
 
         except sqlite3.Error as e:
             conn.close()

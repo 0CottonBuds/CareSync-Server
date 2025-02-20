@@ -1,7 +1,7 @@
 from fastapi import UploadFile, HTTPException,File, Depends, Form
 from fastapi import APIRouter
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 from datetime import datetime
 from typing import List
 
@@ -14,15 +14,17 @@ class AddRecordRequest(BaseModel):
     user_id: str
     type: str
     values: List[str]
+    date: Optional[str] = None
 
 # Function to parse JSON from form data
 def parse_add_request(
     user_id: str = Form(...),
     type: str = Form(...),
-    values: str = Form(...)
+    values: str = Form(...),
+    date: str | None = Form(...)
 ):
     import json
-    return AddRecordRequest(user_id=user_id, type=type, values=json.loads(values)["values"])
+    return AddRecordRequest(user_id=user_id, type=type, values=json.loads(values)["values"], date=date)
 
 @router.post("/add-record/")
 async def add_record(
@@ -34,10 +36,16 @@ async def add_record(
 
     response: list
 
-    date_now = datetime.today()
-    date = date_now.strftime('%Y-%m-%d')
-    time = date_now.strftime('%H-%M')
-    
+    if add_request.date == "" or add_request.date == "None":
+        date_now = datetime.today()
+        date = date_now.strftime('%Y-%m-%d')
+        time = date_now.strftime('%H-%M')
+    else:
+        date = add_request.date
+
+        date_now = datetime.today()
+        time = date_now.strftime('%H-%M')        
+
     if add_request.type == "medication":
         medication_id = add_request.values[0]
         response = MedicationRecordDatabase.add_record(add_request.user_id, medication_id, blob_images, date, time)
