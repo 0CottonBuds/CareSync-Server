@@ -7,6 +7,7 @@ from env import DB_PATH
 from helpers.error import Result, handle_error
 
 
+
 class MedicationDatabase:
 
     @staticmethod
@@ -14,13 +15,14 @@ class MedicationDatabase:
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         try:
-            cursor.execute("SELECT medication_id, medication_name FROM medication WHERE user_id = ?", (user_id, ))
+            cursor.execute("SELECT medication_id, medication_name, date_added FROM medication WHERE user_id = ?", (user_id, ))
             medication_data = cursor.fetchall()
 
             medication_list = []
             for data in medication_data:
                 curr_medication_id = data[0]
                 curr_medication_name = data[1]
+                curr_date_added = data[2]
                 curr_time_to_take = []
 
                 cursor.execute("SELECT time FROM time_to_take WHERE medication_id = ?", (curr_medication_id, ))
@@ -29,7 +31,8 @@ class MedicationDatabase:
                 for time in times:
                     curr_time_to_take.append(time[0])
                 
-                curr_medication = Medication(medication_id=curr_medication_id, user_id=user_id, medication_name=curr_medication_name, time_to_take=curr_time_to_take)
+                
+                curr_medication = Medication(medication_id=curr_medication_id, user_id=user_id, medication_name=curr_medication_name, date_added=curr_date_added, time_to_take=curr_time_to_take)
 
                 medication_list.append(curr_medication)
 
@@ -44,7 +47,7 @@ class MedicationDatabase:
             conn.close()
             print(traceback.format_exc())
             return [Result.INTERNAL_ERROR, str(e)]
-
+    
     @staticmethod
     def add_user_medication(user_id: str, medication_name: str, time_to_take: list[str]):
         conn = sqlite3.connect(DB_PATH)

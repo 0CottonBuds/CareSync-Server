@@ -1,7 +1,7 @@
 from fastapi import FastAPI 
 import socket
 
-from routes import users, auth, medication
+from routes import medication_analytics, users, auth, medication, records
 
 
 app = FastAPI()
@@ -13,6 +13,8 @@ async def api_home():
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(medication.router)
+app.include_router(records.router)
+app.include_router(medication_analytics.router)
 
 
 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
