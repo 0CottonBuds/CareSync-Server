@@ -1,9 +1,11 @@
+
 from datetime import datetime, timedelta, date
 from pydantic import BaseModel
 from typing import Optional
 import traceback
 import sqlite3 
 
+from helpers.measurement_unit import convert_blood_glucose_unit
 from env import DB_PATH
 from helpers.error import Result
 from database.generate import generate_unique_record_id 
@@ -230,6 +232,16 @@ class BloodPreassureRecordDatabase:
             print(traceback.format_exc())
             return [Result.INTERNAL_ERROR, f"internal server error {e}", 400]
 
+class BloodSugarRecord(BaseModel):
+    record_id: Optional[str] = None
+    user_id: Optional[str] = None
+    blood_glucose: str
+    measurement_unit: str
+    date: str
+    time: str
+    attachmends: Optional[list[bytes]] = None
+
+
 class BloodSugarRecordDatabase:
     @staticmethod 
     def add_record(user_id: str, blood_glucose: str, blood_sugar: str, images: list, date, time):
@@ -260,3 +272,112 @@ class BloodSugarRecordDatabase:
             conn.close()
             print(traceback.format_exc())
             return [Result.INTERNAL_ERROR, f"internal server error {e}", 400]
+
+    @staticmethod
+    def get_records_for_week(user_id: str, end_date_str: str):
+        '''returns 7 dates starting from date param'''
+
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        try:
+            start_date = datetime.strptime(end_date_str, "%Y-%m-%d") - timedelta(days=6)
+            start_date_str = start_date.strftime("%Y-%m-%d")
+
+            cursor.execute("SELECT record_id, blood_glucose, measurement_unit, date, time  FROM blood_sugar_records WHERE user_id = ? AND date BETWEEN ? AND ? ORDER BY date ASC", (user_id ,start_date_str, end_date_str))
+            raw_records = cursor.fetchall()
+
+            blood_sugar_record : list[BloodSugarRecord] = []
+            for raw_record in raw_records:
+                curr_record_id = raw_record[0]
+                curr_blood_glucose = raw_record[1]
+                curr_measurement_unit = raw_record[2]
+                curr_date = raw_record[3]
+                curr_time = raw_record[4]
+
+                curr_blood_pressure_Record = BloodSugarRecord(record_id=curr_record_id, blood_glucose=curr_blood_glucose, measurement_unit=curr_measurement_unit, date=curr_date, time=curr_time)
+
+                blood_sugar_record.append(curr_blood_pressure_Record)
+
+
+            blood_sugar_record : list[BloodSugarRecord] = sorted(blood_sugar_record, key=lambda record: record.date)
+
+            blood_sugar_record_with_date : dict[list[BloodSugarRecord]] = {}
+
+            end_date = datetime.strptime(end_date_str, "%Y-%m-%d")
+            curr_date = start_date
+            while not curr_date >= end_date:
+                curr_date_str = curr_date.strftime("%Y-%m-%d")
+
+                curr_date_records = [record for record in blood_sugar_record if record.date == curr_date_str]
+
+                blood_sugar_record_with_date.update({curr_date_str: curr_date_records})
+
+                curr_date = curr_date + timedelta(days=1)
+
+
+            return [Result.SUCCESS, blood_sugar_record_with_date]
+
+        except sqlite3.Error as e:
+            conn.close()
+            print(traceback.format_exc())
+            return [Result.INTERNAL_ERROR, f"Error when interacting with databse: {e}", 400]
+
+        except Exception as e:
+            conn.close()
+            print(traceback.format_exc())
+            return [Result.INTERNAL_ERROR, f"internal server error {e}", 400]
+    
+    
+    def get_records_for_month(user_id: str, year: str, month:str, measurement_unit: str):
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute("SELECT record_id, blood_glucose, measurement_unit, date, time FROM blood_sugar_records WHERE user_id = ? AND date LIKE ?", (user_id, f"{year}-{month}%"))
+            raw_records = cursor.fetchall()
+
+            blood_sugar_records : list[BloodSugarRecord] = []
+            for raw_record in raw_records:
+                curr_record_id = raw_record[0]
+                curr_blood_glucose = raw_record[1]
+                curr_measurement_unit = raw_record[2]
+                curr_date = raw_record[3]
+                curr_time = raw_record[4]
+
+                curr_blood_glucose = str(convert_blood_glucose_unit(int(curr_blood_glucose), measurement_unit) if curr_measurement_unit.lower() != measurement_unit.lower() else curr_blood_glucose)
+                curr_measurement_unit = measurement_unit
+
+                curr_blood_pressure_Record = BloodSugarRecord(record_id=curr_record_id, blood_glucose=curr_blood_glucose, measurement_unit=curr_measurement_unit, date=curr_date, time=curr_time)
+
+                blood_sugar_records.append(curr_blood_pressure_Record)
+
+
+            blood_sugar_records : list[BloodSugarRecord] = sorted(blood_sugar_records, key=lambda record: record.date)
+
+            blood_sugar_records_with_date : dict[list[BloodSugarRecord]] = {}
+
+            curr_date = date(int(year), int(month), 1)
+            while curr_date.month == int(month):
+                curr_date_str = curr_date.strftime("%Y-%m-%d")
+
+                curr_date_records = [record for record in blood_sugar_records if record.date == curr_date_str]
+
+                blood_sugar_records_with_date.update({curr_date_str: curr_date_records})
+
+                curr_date = curr_date + timedelta(days=1)
+
+
+            return [Result.SUCCESS, blood_sugar_records_with_date]
+
+
+        except sqlite3.Error as e:
+            conn.close()
+            print(traceback.format_exc())
+            return [Result.INTERNAL_ERROR, f"Error when interacting with databse: {e}", 400]
+
+        except Exception as e:
+            conn.close()
+            print(traceback.format_exc())
+            return [Result.INTERNAL_ERROR, f"internal server error {e}", 400]
+
+ 

@@ -1,7 +1,7 @@
 from fastapi import FastAPI 
 import socket
 
-from routes import users, auth, medication, records, medication_analytics, blood_preassure_analytics
+from routes import users, auth, medication, records, medication_analytics, blood_preassure_analytics, blood_sugar_analytics
 
 
 app = FastAPI()
@@ -16,6 +16,7 @@ app.include_router(medication.router)
 app.include_router(records.router)
 app.include_router(medication_analytics.router)
 app.include_router(blood_preassure_analytics.router)
+app.include_router(blood_sugar_analytics.router)
 
 
 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
