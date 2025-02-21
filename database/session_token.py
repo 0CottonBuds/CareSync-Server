@@ -49,6 +49,7 @@ class SessionTokenDatabase:
             if len(session_tokens) <= 0:
                 return [Result.ERROR, "Cannot find session token", 404]
             
+            
             if len(session_tokens) > 1:
                 cursor.execute("DELETE FROM session_tokens WHERE user_id = ?", (user_id,))
                 return [Result.ERROR, "Session token invalid", 400]

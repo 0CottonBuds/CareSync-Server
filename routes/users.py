@@ -6,6 +6,7 @@ router = APIRouter(prefix="/users", tags=["Users"])
 
 @router.get("/get-info/{user_id}")
 async def api_get_user_info(user_id: str):
+    print(user_id)
     response = UserDatabase.get_user_info(user_id)
     handle_error(response)
 

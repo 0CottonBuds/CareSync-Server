@@ -58,7 +58,9 @@ async def does_username_exist(username: str):
  
 @router.post("/validate-session-token")
 async def api_validate_session_token(validation_request: TokenValidationRequest):
+    print(validation_request)
     response = SessionTokenDatabase.validate_session_token(validation_request.token, validation_request.user_id) 
+    print(response)
     handle_error(response)
 
     return {"message": "Session token is valid", "isValid": True}
