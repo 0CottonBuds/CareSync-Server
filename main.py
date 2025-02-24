@@ -1,4 +1,5 @@
 from fastapi import FastAPI 
+import traceback 
 import socket
 
 from routes import users, auth, medication, records, medication_analytics, blood_preassure_analytics, blood_sugar_analytics
@@ -19,10 +20,14 @@ app.include_router(blood_preassure_analytics.router)
 app.include_router(blood_sugar_analytics.router)
 
 
-s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-s.connect(("8.8.8.8", 80))
-print("\tTo connect to Care Sync server use the following address....For Care Sync client please change the api_url of env.js to the url bellow ")
-print("\t\tIPAddress:\t " + s.getsockname()[0])
-print("\t\tPort:\t\t 8000")
-print(f"\t\tURL:\t\t http://{s.getsockname()[0]}:8000")
-s.close()
+try:
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(("8.8.8.8", 80))
+    print("\tTo connect to Care Sync server use the following address....For Care Sync client please change the api_url of env.js to the url bellow ")
+    print("\t\tIPAddress:\t " + s.getsockname()[0])
+    print("\t\tPort:\t\t 8000")
+    print(f"\t\tURL:\t\t http://{s.getsockname()[0]}:8000")
+    s.close()
+except Exception as e:
+    print(e)
+    print(traceback.format_exc())
