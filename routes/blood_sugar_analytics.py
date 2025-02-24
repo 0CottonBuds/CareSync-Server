@@ -40,6 +40,8 @@ async def get_analytics_for_week(request: BloodSugarWeekAnalyticsRequest):
         
         for record in records:
             curr_blood_glucose = float(record.blood_glucose) if record.measurement_unit == request.measurement_unit else convert_blood_glucose_unit(float(record.blood_glucose), request.measurement_unit)
+            record.blood_glucose = curr_blood_glucose
+            record.measurement_unit = request.measurement_unit
 
             max_blood_glucose = curr_blood_glucose if curr_blood_glucose > max_blood_glucose else max_blood_glucose
             min_blood_glucose = curr_blood_glucose if curr_blood_glucose < min_blood_glucose else min_blood_glucose
@@ -49,13 +51,15 @@ async def get_analytics_for_week(request: BloodSugarWeekAnalyticsRequest):
             num_records += 1
         
     average_blood_glucose = sum_blood_glucose // num_records
+
+    print(blood_sugar_records_with_date)
     
     return {
                 "message": f"Week analytics ending on {request.date}", 
                 "details": {
-                    "average: " : average_blood_glucose,
-                    "Highest: " : max_blood_glucose,
-                    "Lowest: " : min_blood_glucose
+                    "average" : average_blood_glucose,
+                    "Highest" : max_blood_glucose,
+                    "Lowest" : min_blood_glucose
                 },
                 "history": blood_sugar_records_with_date
            }
@@ -79,7 +83,10 @@ async def get_analytics_for_month(request: BloodSugarMonthAnalyticsRequest):
     for date, records in blood_sugar_records_with_date.items():
         
         for record in records:
-            curr_blood_glucose = float(record.blood_glucose)
+            curr_blood_glucose = float(record.blood_glucose) if record.measurement_unit == request.measurement_unit else convert_blood_glucose_unit(float(record.blood_glucose), request.measurement_unit)
+
+            record.blood_glucose = curr_blood_glucose
+            record.measurement_unit = request.measurement_unit
 
             max_blood_glucose = curr_blood_glucose if curr_blood_glucose > max_blood_glucose else max_blood_glucose
             min_blood_glucose = curr_blood_glucose if curr_blood_glucose < min_blood_glucose else min_blood_glucose
@@ -93,9 +100,9 @@ async def get_analytics_for_month(request: BloodSugarMonthAnalyticsRequest):
     return {
                 "message": f"analytics for month: {month_name[int(request.month)]}, {request.year}", 
                 "details": {
-                    "average: " : average_blood_glucose,
-                    "Highest: " : max_blood_glucose,
-                    "Lowest: " : min_blood_glucose
+                    "average" : average_blood_glucose,
+                    "Highest" : max_blood_glucose,
+                    "Lowest" : min_blood_glucose
                 },
                 "history": blood_sugar_records_with_date
            }

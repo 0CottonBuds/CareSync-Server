@@ -3,6 +3,7 @@ from database.generate import generate_unique_id
 import sqlite3
 import traceback
 from env import DB_PATH
+import datetime
 
 from helpers.error import Result, handle_error
 
@@ -61,7 +62,9 @@ class MedicationDatabase:
             medication_id: str= response[1]
             print(response)
             print(medication_id)
-            cursor.execute("INSERT INTO medication (user_id, medication_id, medication_name) VALUES (?, ?, ?)", (user_id, medication_id, medication_name))
+            date = datetime.date.today()
+            date_str = date.strftime("%Y-%m-%d")
+            cursor.execute("INSERT INTO medication (user_id, medication_id, medication_name, date_added) VALUES (?, ?, ?, ?)", (user_id, medication_id, medication_name, date_str))
 
             for time in time_to_take:
                 cursor.execute("INSERT INTO time_to_take (medication_id, time) VALUES (?, ?)", (medication_id, time))

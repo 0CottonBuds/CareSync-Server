@@ -1,4 +1,5 @@
 import sqlite3
+import traceback
 
 from env import DB_PATH
 from helpers.error import Result
@@ -60,3 +61,47 @@ class UserDatabase:
         except Exception as e:
             conn.close()
             return[Result.INTERNAL_ERROR, f"Internal server error {e}", 400]
+
+    def add_profile_picture(user_id:str, image: bytes):
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        try:
+            cursor.execute("UPDATE users SET profile = ? WHERE user_id = ?", (image, user_id))
+
+            conn.commit()
+            conn.close()
+            return[Result.SUCCESS, "Successfully added profile picture"]
+
+        except sqlite3.Error as e:
+            conn.close()
+            print(traceback.format_exc())
+            return[Result.INTERNAL_ERROR, f"Error when interacting with databse: {e}", 400]
+
+        except Exception as e:
+            conn.close()
+            print(traceback.format_exc())
+            return[Result.INTERNAL_ERROR, f"Internal server error {e}", 400]
+
+    def get_profile_picture(user_id:str):
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        try:
+            cursor.execute("SELECT profile FROM users WHERE user_id = ?", (user_id, ))
+
+            image = cursor.fetchone()[0]
+            if(image == None):
+                return [Result.ERROR, "Profile picitre not found", 404]
+
+            conn.close()
+            return [Result.SUCCESS, image]
+
+        except sqlite3.Error as e:
+            conn.close()
+            print(traceback.format_exc())
+            return[Result.INTERNAL_ERROR, f"Error when interacting with databse: {e}", 400]
+
+        except Exception as e:
+            conn.close()
+            print(traceback.format_exc())
+            return[Result.INTERNAL_ERROR, f"Internal server error {e}", 400]
+

@@ -282,8 +282,10 @@ class BloodSugarRecordDatabase:
         try:
             start_date = datetime.strptime(end_date_str, "%Y-%m-%d") - timedelta(days=6)
             start_date_str = start_date.strftime("%Y-%m-%d")
+            end_date = datetime.strptime(end_date_str, "%Y-%m-%d")
+            end_date_str_ = end_date.strftime("%Y-%m-%d") # for some reasons the first date is not included here
 
-            cursor.execute("SELECT record_id, blood_glucose, measurement_unit, date, time  FROM blood_sugar_records WHERE user_id = ? AND date BETWEEN ? AND ? ORDER BY date ASC", (user_id ,start_date_str, end_date_str))
+            cursor.execute("SELECT record_id, blood_glucose, measurement_unit, date, time  FROM blood_sugar_records WHERE user_id = ? AND date BETWEEN ? AND ? ORDER BY date ASC", (user_id ,start_date_str, end_date_str_))
             raw_records = cursor.fetchall()
 
             blood_sugar_record : list[BloodSugarRecord] = []
@@ -303,7 +305,6 @@ class BloodSugarRecordDatabase:
 
             blood_sugar_record_with_date : dict[list[BloodSugarRecord]] = {}
 
-            end_date = datetime.strptime(end_date_str, "%Y-%m-%d")
             curr_date = start_date
             while not curr_date >= end_date:
                 curr_date_str = curr_date.strftime("%Y-%m-%d")
@@ -344,7 +345,7 @@ class BloodSugarRecordDatabase:
                 curr_date = raw_record[3]
                 curr_time = raw_record[4]
 
-                curr_blood_glucose = str(convert_blood_glucose_unit(int(curr_blood_glucose), measurement_unit) if curr_measurement_unit.lower() != measurement_unit.lower() else curr_blood_glucose)
+                curr_blood_glucose = str(convert_blood_glucose_unit(float(curr_blood_glucose), measurement_unit) if curr_measurement_unit.lower() != measurement_unit.lower() else curr_blood_glucose)
                 curr_measurement_unit = measurement_unit
 
                 curr_blood_pressure_Record = BloodSugarRecord(record_id=curr_record_id, blood_glucose=curr_blood_glucose, measurement_unit=curr_measurement_unit, date=curr_date, time=curr_time)

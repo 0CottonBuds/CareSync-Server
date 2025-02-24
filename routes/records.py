@@ -46,12 +46,12 @@ async def add_record(
     if add_request.date == "" or add_request.date == "None":
         date_now = datetime.today()
         date = date_now.strftime('%Y-%m-%d')
-        time = date_now.strftime('%H-%M')
+        time = date_now.strftime('%H:%M')
     else:
         date = add_request.date
 
         date_now = datetime.today()
-        time = date_now.strftime('%H-%M')        
+        time = date_now.strftime('%H:%M')        
 
     if add_request.type == "medication":
         medication_id = add_request.values[0]
@@ -59,10 +59,14 @@ async def add_record(
     elif add_request.type == "blood_preassure":
         systol = add_request.values[0]
         diastol = add_request.values[1]
+        if(systol == "" or diastol == ""):
+            raise HTTPException(status_code=403, detail="Input values are invalid")
         response = BloodPreassureRecordDatabase.add_record(add_request.user_id, systol, diastol, blob_images, date, time)
     elif add_request.type == "blood_sugar":
         blood_glucose = add_request.values[0]
         measurement_unit = add_request.values[1]
+        if(blood_glucose == "" or measurement_unit == ""):
+            raise HTTPException(status_code=403, detail="Input values are invalid")
         response = BloodSugarRecordDatabase.add_record(add_request.user_id, blood_glucose, measurement_unit, blob_images, date, time)
     else:
         raise HTTPException(status_code=403, details="Forbidden")

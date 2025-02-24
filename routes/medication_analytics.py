@@ -37,7 +37,7 @@ async def get_medication_analytics_by_month(request: MedicationMonthAnalyticsReq
     handle_error(response)    
     medications: list[Medication] = response[1] 
 
-    analytics = []
+    analytics = {}
 
     curr_date = date(int(request.year), int(request.month), 1)
     while curr_date.month == int(request.month):
@@ -45,7 +45,7 @@ async def get_medication_analytics_by_month(request: MedicationMonthAnalyticsReq
 
         if curr_date > datetime.today().date():
             print("Exceeded current date: ", curr_date.strftime('%Y-%m-%d'))
-            analytics.append({curr_date_str : []})
+            analytics.update({curr_date_str : []})
             curr_date += timedelta(days=1)
             continue
         print("Current Date: ", curr_date.strftime("%Y-%m-%d"))
@@ -71,7 +71,7 @@ async def get_medication_analytics_by_month(request: MedicationMonthAnalyticsReq
         
             curr_medication_analytics: MedicationDayAnalytics = MedicationDayAnalytics(date=curr_date_str, medication_id=medication.medication_id, medication_name=medication.medication_name)
             if medication.medication_id not in records_for_each_medication.keys():
-                curr_medication_analytics.times_skipped.append(medication.time_to_take)
+                curr_medication_analytics.times_skipped.extend(medication.time_to_take)
             else:
                 times_to_take: list[int] = [convert_str_time_to_minutes(time) for time in medication.time_to_take]
                 times_to_take.sort()
@@ -97,10 +97,10 @@ async def get_medication_analytics_by_month(request: MedicationMonthAnalyticsReq
                     curr_medication_analytics.times_extra.append(convert_minutes_to_str_time(time))
 
 
-            curr_day_analytics.append({medication.medication_id: curr_medication_analytics}) # Note: Dictionary{medication_id, analytics}
+            curr_day_analytics.append(curr_medication_analytics) # Note: Dictionary{medication_id, analytics}
 
-        analytics.append({curr_date_str :curr_day_analytics})
+        analytics.update({curr_date_str : curr_day_analytics})
         curr_date += timedelta(days=1)
 
 
-    return {"message": f"Analytics for month: {month_name[int(request.month)]}, {request.year}", "analytics": analytics}
+    return {"message": f"Analytics for month: {month_name[int(request.month)]}, {request.year}", "records": analytics}

@@ -60,15 +60,15 @@ async def get_analytics_for_week(request: BloodPressureWeekAnalyticsRequest):
     return {
                 "message": f"Week analytics ending on {request.date}", 
                 "details": {
-                    "average: " : {
+                    "average" : {
                         "systol": str(average_systol),
                         "diastol": str(average_diastol) 
                     },
-                    "Highest: " : {
+                    "Highest" : {
                         "systol": str(max_systol),
                         "diastol": str(max_diastol) 
                     },
-                    "Lowest: " : {
+                    "Lowest" : {
                         "systol": str(min_systol),
                         "diastol": str(min_diastol) 
                     }
@@ -118,15 +118,15 @@ async def get_analytics_for_month(request: BloodPressureMonthAnalyticsRequest):
     return {
                 "message": f"analytics for month: {month_name[int(request.month)]}, {request.year}", 
                 "details": {
-                    "average: " : {
+                    "average" : {
                         "systol": str(average_systol),
                         "diastol": str(average_diastol) 
                     },
-                    "Highest: " : {
+                    "Highest" : {
                         "systol": str(max_systol),
                         "diastol": str(max_diastol) 
                     },
-                    "Lowest: " : {
+                    "Lowest" : {
                         "systol": str(min_systol),
                         "diastol": str(min_diastol) 
                     }
