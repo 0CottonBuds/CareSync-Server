@@ -4,6 +4,8 @@ Care Sync is a collaboration project between BSMT of NU MOA and me BSCS of NU Ma
 
 # Instructions
 
+### NOTE: please set your ip to a static ip of 192.168.100.68 for this to work on the mobile app. Not doing this step ill make the app unable to communicate to the server. If you dont want to change your IP to a static IP you then need to recompile the Mobile app and change the IP address there.
+
 1. install python
 2. create venv and activate it `python -m venv venv`
 3. install dependencies with `pip install -r requirements.txt`
